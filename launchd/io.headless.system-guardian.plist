@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+    System Guardian Daemon
+    Monitors memory pressure and kills low-priority processes to protect
+    Jump Desktop Connect and other critical services.
+
+    Install: sudo launchctl bootstrap system /Library/LaunchDaemons/io.headless.system-guardian.plist
+    Status:  sudo launchctl list io.headless.system-guardian
+    Logs:    /var/log/system-guardian.log
+    -->
+    <key>Label</key>
+    <string>io.headless.system-guardian</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/system-guardian.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>UserName</key>
+    <string>root</string>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/system-guardian.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/system-guardian.log</string>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+</dict>
+</plist>
