@@ -22,19 +22,15 @@ fi
 info "Uninstalling headless deployment daemons..."
 
 # Stop and remove memory watchdog
-if launchctl list | grep -q "io.headless.memory-watchdog"; then
-    info "Stopping memory watchdog..."
-    launchctl bootout system /Library/LaunchDaemons/io.headless.memory-watchdog.plist 2>/dev/null || true
-fi
+info "Stopping memory watchdog..."
+launchctl bootout system /Library/LaunchDaemons/io.headless.memory-watchdog.plist 2>/dev/null || true
 rm -f /Library/LaunchDaemons/io.headless.memory-watchdog.plist
 rm -f /usr/local/bin/memory-watchdog.sh
 info "Memory watchdog removed"
 
 # Stop and remove system guardian
-if launchctl list | grep -q "io.headless.system-guardian"; then
-    info "Stopping system guardian..."
-    launchctl bootout system /Library/LaunchDaemons/io.headless.system-guardian.plist 2>/dev/null || true
-fi
+info "Stopping system guardian..."
+launchctl bootout system /Library/LaunchDaemons/io.headless.system-guardian.plist 2>/dev/null || true
 rm -f /Library/LaunchDaemons/io.headless.system-guardian.plist
 rm -f /usr/local/bin/system-guardian.sh
 info "System guardian removed"

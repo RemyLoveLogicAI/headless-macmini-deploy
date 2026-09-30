@@ -116,7 +116,7 @@ case "${1:-full}" in
         echo "Usage: $0 {full|press|hold} [duration_seconds]"
         echo ""
         echo "Commands:"
-        echo "  full [10]    Full reboot cycle (hold $1s, release, press on) — default"
+        echo "  full [10]    Full reboot cycle (hold 10s, release, press on) — default"
         echo "  press        Short press only"
         echo "  hold [10]    Hold power button for N seconds"
         echo ""

@@ -106,7 +106,7 @@ bash bin/diagnostics.sh
 ```
 
 Expected output:
-```
+```text
 === FileVault ===
   PASS  FileVault is OFF
 
@@ -190,7 +190,7 @@ sudo launchctl bootstrap system /Library/LaunchDaemons/io.headless.memory-watchd
 
 1. Verify Hub Mini is on same Wi-Fi network as Mac mini
 2. Verify token is correct in `switchbot-reboot.sh`
-3. Test API: `curl -H "Authorization: YOUR_TOKEN" https://api.switch-bot.com/v1.1/devices`
+3. Test API (set token in environment first): `curl -H "Authorization: ${SWITCHBOT_TOKEN}" https://api.switch-bot.com/v1.1/devices`
 4. Check SwitchBot Bot battery level in app
 
 ### System still freezes before watchdog triggers

@@ -8,7 +8,7 @@
 #   2. Enables automatic login (bypasses login screen after reboot)
 #   3. Configures Energy settings for auto-power-on after failure
 #   4. Enables restartfreeze (firmware-level panic recovery)
-#   5. Disasks display sleep (prevents GPU sleep killing remote desktop)
+#   5. Disables display sleep (prevents GPU sleep killing remote desktop)
 #   6. Verifies Jump Desktop Connect is set to launch at login
 #
 # WARNING: Disabling FileVault means physical theft = data accessible.
@@ -144,7 +144,7 @@ if [ -d "$JD_PATH" ]; then
 
     # Enable remote management (Screen Sharing) as fallback
     info "Enabling Screen Sharing (VNC) as fallback..."
-    launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist 2>/dev/null || true
+    launchctl bootstrap system /System/Library/LaunchDaemons/com.apple.screensharing.plist 2>/dev/null || launchctl enable system/com.apple.screensharing 2>/dev/null || true
 
     # Ensure SSH is enabled
     info "Checking SSH status..."
@@ -164,7 +164,8 @@ echo ""
 info "Step 5: Display Detection"
 
 # Check if any display is connected
-display_count=$(system_profiler SPDisplaysDataType 2>/dev/null | grep -c "Resolution" || echo "0")
+display_count=$(system_profiler SPDisplaysDataType 2>/dev/null | grep -c "Resolution" || true)
+display_count=${display_count:-0}
 if [ "$display_count" -eq 0 ]; then
     warn "No display detected!"
     warn "Without a display, Jump Desktop may fail to encode video after reboot."

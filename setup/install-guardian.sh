@@ -22,6 +22,7 @@ BIN_DEST="/usr/local/bin/system-guardian.sh"
 PLIST_DEST="/Library/LaunchDaemons/io.headless.system-guardian.plist"
 
 info "Installing system-guardian.sh to $BIN_DEST"
+mkdir -p "$(dirname "$BIN_DEST")"
 cp "$SCRIPT_DIR/bin/system-guardian.sh" "$BIN_DEST"
 chmod 755 "$BIN_DEST"
 chown root:wheel "$BIN_DEST"

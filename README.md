@@ -1,4 +1,4 @@
-# Headless Mac Mini M4 — Deployment Package
+# Headless Mac mini M4 — Deployment Package
 
 Production-grade tools for managing headless Apple Silicon Mac mini deployments
 with remote power management and memory exhaustion fail-safes.
@@ -13,7 +13,7 @@ button makes physical recovery impractical for remote or rack-mounted units.
 
 Three-layer defense:
 
-```
+```text
 Layer 1 — Prevention (proactive software)
 ├── memory-watchdog.sh    → graceful reboot before freeze
 └── system-guardian.sh    → kill low-priority procs before redline

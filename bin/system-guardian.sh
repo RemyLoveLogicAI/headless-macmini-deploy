@@ -50,7 +50,7 @@ get_pressure_score() {
     inactive=$(vm_stat | awk '/Pages inactive/ {gsub(/\./, "", $3); print $3}')
     speculative=$(vm_stat | awk '/Pages speculative/ {gsub(/\./, "", $3); print $3}')
     free=$(vm_stat | awk '/Pages free/ {gsub(/\./, "", $3); print $3}')
-    wired=$(vm_stat | awk '/Pages wired down/ {gsub(/\./, "", $3); print $3}')
+    wired=$(vm_stat | awk '/Pages wired down/ {gsub(/\./, "", $4); print $4}')
 
     # Used = active + wired (cannot be reclaimed)
     used_pages=$((active + wired))
@@ -198,7 +198,7 @@ check_and_kill() {
         fi
 
         # At critical threshold, keep killing
-        if [ "$pressure" -ge "$CRITICAL_THRESHOLD" ]; then
+        if [ "$new_pressure" -ge "$CRITICAL_THRESHOLD" ]; then
             continue
         fi
 

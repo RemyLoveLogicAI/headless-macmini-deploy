@@ -30,6 +30,7 @@ PLIST_DEST="/Library/LaunchDaemons/io.headless.memory-watchdog.plist"
 
 # Step 1: Install script
 info "Installing memory-watchdog.sh to $BIN_DEST"
+mkdir -p "$(dirname "$BIN_DEST")"
 cp "$SCRIPT_DIR/bin/memory-watchdog.sh" "$BIN_DEST"
 chmod 755 "$BIN_DEST"
 chown root:wheel "$BIN_DEST"

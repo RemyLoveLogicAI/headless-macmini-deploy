@@ -53,8 +53,18 @@ restart_freeze=$(systemsetup -getrestartfreeze 2>/dev/null | grep -o "On\|Off" |
 display_sleep=$(systemsetup -getdisplaysleep 2>/dev/null || echo "Unknown")
 system_sleep=$(systemsetup -getsleep 2>/dev/null || echo "Unknown")
 
-[ "$restart_power" = "On" ] && pass "Restart after power failure: ON" || fail "Restart after power failure: OFF"
-[ "$restart_freeze" = "On" ] && pass "Restart on freeze: ON" || fail "Restart on freeze: OFF"
+if [ "$restart_power" = "On" ]; then
+    pass "Restart after power failure: ON"
+else
+    fail "Restart after power failure: OFF"
+    ISSUES=$((ISSUES + 1))
+fi
+if [ "$restart_freeze" = "On" ]; then
+    pass "Restart on freeze: ON"
+else
+    fail "Restart on freeze: OFF"
+    ISSUES=$((ISSUES + 1))
+fi
 if echo "$display_sleep" | grep -q "Off\|Never"; then
     pass "Display sleep: OFF"
 else
@@ -115,7 +125,8 @@ else
 fi
 
 header "Display"
-display_count=$(system_profiler SPDisplaysDataType 2>/dev/null | grep -c "Resolution" || echo "0")
+display_count=$(system_profiler SPDisplaysDataType 2>/dev/null | grep -c "Resolution" || true)
+display_count=${display_count:-0}
 if [ "$display_count" -gt 0 ]; then
     pass "Display detected ($display_count output(s))"
 else
@@ -128,7 +139,7 @@ total_mem=$(sysctl -n hw.memsize)
 total_mem_gb=$((total_mem / 1024 / 1024 / 1024))
 
 active=$(vm_stat | awk '/Pages active/ {gsub(/\./, "", $3); print $3}')
-wired=$(vm_stat | awk '/Pages wired down/ {gsub(/\./, "", $3); print $3}')
+wired=$(vm_stat | awk '/Pages wired down/ {gsub(/\./, "", $4); print $4}')
 free=$(vm_stat | awk '/Pages free/ {gsub(/\./, "", $3); print $3}')
 inactive=$(vm_stat | awk '/Pages inactive/ {gsub(/\./, "", $3); print $3}')
 speculative=$(vm_stat | awk '/Pages speculative/ {gsub(/\./, "", $3); print $3}')
@@ -137,8 +148,20 @@ total_pages=$((total_mem / page_size))
 used_pct=$(((active + wired) * 100 / total_pages))
 free_pct=$(((free + inactive + speculative) * 100 / total_pages))
 
-swap_info=$(sysctl -n vm.swapusage 2>/dev/null || echo "")
-swap_mb=$(echo "$swap_info" | grep -oP 'total: \K[0-9]+' | awk '{print int($1/1024/1024)}' 2>/dev/null || echo "0")
+swap_mb=$(sysctl -n vm.swapusage 2>/dev/null | awk -F'used = ' '{
+    if (NF > 1) {
+        split($2, a, " ");
+        val = a[1];
+        unit = substr(val, length(val), 1);
+        num = substr(val, 1, length(val)-1) + 0;
+        if (unit == "G") num = num * 1024;
+        else if (unit == "T") num = num * 1024 * 1024;
+        else if (unit == "K") num = num / 1024;
+        printf "%.0f\n", num;
+        found = 1;
+    }
+}
+END { if (!found) print 0; }')
 
 echo "  Total RAM: ${total_mem_gb} GB"
 echo "  Used: ${used_pct}% | Available: ${free_pct}%"
@@ -166,20 +189,23 @@ for logfile in "/var/log/memory-watchdog.log" "/var/log/system-guardian.log"; do
 done
 
 header "SwitchBot (Optional)"
-if grep -q "YOUR_SECRET_TOKEN" /usr/local/bin/switchbot-reboot.sh 2>/dev/null; then
-    warn "SwitchBot not configured — edit /usr/local/bin/switchbot-reboot.sh"
+SWITCHBOT_SCRIPT="/usr/local/bin/switchbot-reboot.sh"
+if [ ! -f "$SWITCHBOT_SCRIPT" ]; then
+    warn "SwitchBot script not installed at $SWITCHBOT_SCRIPT"
+elif grep -q "YOUR_SECRET_TOKEN" "$SWITCHBOT_SCRIPT" 2>/dev/null; then
+    warn "SwitchBot not configured — edit $SWITCHBOT_SCRIPT"
 else
     pass "SwitchBot configured"
-    # Test connectivity (non-destructive — just list devices)
-    token=$(grep "SWITCHBOT_TOKEN=" /usr/local/bin/switchbot-reboot.sh | cut -d'"' -f2)
-    if command -v curl &>/dev/null; then
+    # Test connectivity (non-destructive — check devices endpoint)
+    token=$(grep "SWITCHBOT_TOKEN=" "$SWITCHBOT_SCRIPT" | cut -d'"' -f2)
+    if [ -n "$token" ] && command -v curl &>/dev/null; then
         test_response=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: $token" \
             "https://api.switch-bot.com/v1.1/devices" 2>/dev/null || echo "000")
         if [ "$test_response" = "200" ]; then
             pass "SwitchBot API: reachable"
         else
-            warn "SwitchBot API: unreachable (HTTP $test_response)"
+            warn "SwitchBot API: returned HTTP $test_response (verify v1.1 token/secret configuration)"
         fi
     fi
 fi

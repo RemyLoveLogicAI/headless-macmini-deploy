@@ -49,9 +49,20 @@ get_free_mem_percent() {
 
 # Returns swap used in MB
 get_swap_used_mb() {
-    sysctl -n vm.swapusage 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/ && $(i-1) == "total") print int($i/1024/1024)}'
-    # Fallback: parse "total: XXXX bytes" format
-    sysctl -n vm.swapusage 2>/dev/null | grep -oP 'total: \K[0-9]+' | awk '{print int($1/1024/1024)}' 2>/dev/null || echo "0"
+    sysctl -n vm.swapusage 2>/dev/null | awk -F'used = ' '{
+        if (NF > 1) {
+            split($2, a, " ");
+            val = a[1];
+            unit = substr(val, length(val), 1);
+            num = substr(val, 1, length(val)-1) + 0;
+            if (unit == "G") num = num * 1024;
+            else if (unit == "T") num = num * 1024 * 1024;
+            else if (unit == "K") num = num / 1024;
+            printf "%.0f\n", num;
+            found = 1;
+        }
+    }
+    END { if (!found) print 0; }'
 }
 
 # Alternative: use memory_pressure command if available
@@ -74,6 +85,7 @@ check_memory() {
     # Primary trigger: free memory below threshold AND swap indicates thrashing
     if [ "$free_pct" -lt "$FREE_MEM_THRESHOLD_PERCENT" ] && [ "$swap_mb" -gt "$SWAP_USED_THRESHOLD_MB" ]; then
         log "CRITICAL" "Memory exhaustion imminent — free=${free_pct}% swap=${swap_mb}MB — initiating graceful reboot"
+        trigger_reboot "$free_pct" "$swap_mb" "$pressure_pct"
         return 1
     fi
 
@@ -87,7 +99,11 @@ check_memory() {
 
 # ── Graceful Reboot ────────────────────────────────────────────────────────
 trigger_reboot() {
-    log "CRITICAL" "Executing graceful reboot via shutdown -r now"
+    local free_pct="${1:-unknown}"
+    local swap_mb="${2:-unknown}"
+    local pressure_pct="${3:-}"
+
+    log "CRITICAL" "Executing graceful reboot via shutdown -r now (free=${free_pct}%, swap=${swap_mb}MB)"
 
     # Notify via syslog for system log correlation
     logger -p daemon.crit "memory-watchdog: Initiating graceful reboot — free memory ${free_pct}% swap ${swap_mb}MB"
@@ -109,7 +125,6 @@ main() {
 
     while true; do
         if ! check_memory; then
-            trigger_reboot
             # If shutdown somehow didn't execute, exit to let launchd restart us
             exit 1
         fi
