@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+    Memory Watchdog Daemon
+    Polls memory_pressure every 5 minutes.
+    Triggers graceful reboot when free memory &lt; 15% AND swap &gt; 2GB.
+
+    Install: sudo launchctl bootstrap system /Library/LaunchDaemons/io.headless.memory-watchdog.plist
+    Status:  sudo launchctl list io.headless.memory-watchdog
+    Logs:    /var/log/memory-watchdog.log
+    -->
+    <key>Label</key>
+    <string>io.headless.memory-watchdog</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/memory-watchdog.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Restart automatically if the process crashes (e.g., during reboot) -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Run as root to allow shutdown -r now -->
+    <key>UserName</key>
+    <string>root</string>
+
+    <!-- Standard output/error to log file -->
+    <key>StandardOutPath</key>
+    <string>/var/log/memory-watchdog.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/memory-watchdog.log</string>
+
+    <!-- Throttle restart to avoid boot loops after crash recovery -->
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+</dict>
+</plist>
